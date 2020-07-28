@@ -126,6 +126,8 @@ class ChClient:
             return {}
         if not isinstance(params, dict):
             raise TypeError('Query params must be a Dict[str, Any]')
+
+        # https://clickhouse.tech/docs/en/interfaces/http/#cli-queries-with-parameters
         return {f"param_{k}": v for k, v in params.items()}
 
     async def _execute(
