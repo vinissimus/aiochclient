@@ -126,10 +126,7 @@ class ChClient:
             return {}
         if not isinstance(params, dict):
             raise TypeError('Query params must be a Dict[str, Any]')
-        prepared_query_params = {}
-        for key, value in params.items():
-            prepared_query_params[key] = py2ch(value).decode('utf-8')
-        return prepared_query_params
+        return {f"param_{k}": v for k, v in params.items()}
 
     async def _execute(
         self,
@@ -139,7 +136,7 @@ class ChClient:
         query_params: Optional[Dict[str, Any]] = None,
     ) -> AsyncGenerator[Record, None]:
         query_params = self._prepare_query_params(query_params)
-        query = query.format(**query_params)
+        params = {**self.params, **query_params}
         need_fetch, is_json, statement_type = self._parse_squery(query)
 
         if not is_json and json:
@@ -154,14 +151,13 @@ class ChClient:
                 raise ChClientError(
                     "It is possible to pass arguments only for INSERT queries"
                 )
-            params = {**self.params, "query": query}
+            params["query"] = query
 
             if is_json:
                 data = json2ch(*args, dumps=self._json.dumps)
             else:
                 data = rows2ch(*args)
         else:
-            params = self.params
             data = query.encode()
 
         if need_fetch:
